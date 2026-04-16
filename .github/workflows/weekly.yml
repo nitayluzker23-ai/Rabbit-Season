@@ -1,0 +1,39 @@
+name: Rabbit Season
+
+on:
+  schedule:
+    - cron: "0 6 * * 0"   # Every Sunday 6:00 AM UTC = 8:00 AM Israel time (UTC+2)
+  workflow_dispatch:        # Manual trigger from GitHub UI anytime
+
+jobs:
+  run-screener:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Rabbit Season screener
+        run: python screener.py
+
+      - name: Send PDF by email
+        env:
+          GMAIL_USER:      ${{ secrets.GMAIL_USER }}
+          GMAIL_PASSWORD:  ${{ secrets.GMAIL_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        run: python send_email.py
+
+      - name: Save PDF as artifact (backup in GitHub)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rabbit-season-${{ github.run_id }}
+          path: rabbit_season.pdf
+          retention-days: 30
